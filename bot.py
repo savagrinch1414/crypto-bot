@@ -18,7 +18,7 @@ from services.crypto_services import CryptoServices
 from handlers.donate import register_donate
 from handlers.feedback import register_feedback
 from handlers.show_price import register_handlers_price
-
+from aiogram.types import ParseMode
 
 
 
@@ -74,6 +74,30 @@ except Exception as e:
     logger.error(f"❌ Ошибка при регистрации хендлеров: {e}")
     raise
 
+
+WEBHOOK_HOST = 'https://crypto-bot-7gps.onrender.com'
+WEBHOOK_PATH = '/webhook'
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
+
+WEBAPP_HOST = '0.0.0.0'  # Для Render обязательно 0.0.0.0
+WEBAPP_PORT = int(os.getenv('PORT', 8000))
+
+async def on_startup(dp):
+    """Действия при запуске"""
+    # Устанавливаем вебхук
+    await bot.set_webhook(WEBHOOK_URL)
+    logging.info(f"Вебхук установлен: {WEBHOOK_URL}")
+
+async def on_shutdown(dp):
+    """Действия при остановке"""
+    # Удаляем вебхук и закрываем сессию
+    await bot.delete_webhook()
+    await dp.storage.close()
+    await dp.storage.wait_closed()
+    logging.info("Бот остановлен")
+
+
+
 if __name__ == "__main__":
     try:
         # Очищаем старый кеш
@@ -84,7 +108,15 @@ if __name__ == "__main__":
             logger.error(f"❌ Ошибка при очистке кеша: {e}")
 
         logger.info("🚀 Запуск бота...")
-        executor.start_polling(dp, skip_updates=True, on_shutdown=on_shutdown)
+        executor.start_webhook(
+            dispatcher=dp,
+            webhook_path=WEBHOOK_PATH,
+            on_startup=on_startup,
+            on_shutdown=on_shutdown,
+            host=WEBAPP_HOST,
+            port=WEBAPP_PORT,
+            skip_updates=True,  # Пропустить старые апдейты
+        )
     except Exception as e:
         logger.critical(f"💥 Критическая ошибка при запуске бота: {e}", exc_info=True)
         raise
