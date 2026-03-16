@@ -8,16 +8,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-print(f"👆👆👆 ТОКЕН: {BOT_TOKEN}")
 
-if BOT_TOKEN is None:
-    raise ValueError("Токен не найден! Проверьте файл .env")
 
 storage = MemoryStorage()
-
-bot = Bot(token=BOT_TOKEN)
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 dp = Dispatcher(bot, storage=storage)
+bot = Bot(token=BOT_TOKEN)
+
 
 crypto_service = CryptoServices()
 dp['crypto_service'] = crypto_service
