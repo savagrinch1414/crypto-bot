@@ -19,6 +19,9 @@ from handlers.donate import register_donate
 from handlers.feedback import register_feedback
 from handlers.show_price import register_handlers_price
 from aiogram.types import ParseMode
+from loader import bot
+import os
+import logging
 
 
 
@@ -84,12 +87,14 @@ WEBAPP_PORT = int(os.getenv('PORT', 8000))
 
 async def on_startup(dp):
     """Действия при запуске"""
+    bot = dp.bot
     # Устанавливаем вебхук
     await bot.set_webhook(WEBHOOK_URL)
     logging.info(f"Вебхук установлен: {WEBHOOK_URL}")
 
 async def on_shutdown(dp):
     """Действия при остановке"""
+    bot = dp.bot
     # Удаляем вебхук и закрываем сессию
     await bot.delete_webhook()
     await dp.storage.close()
