@@ -6,8 +6,15 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from services.crypto_services import CryptoServices
 from dotenv import load_dotenv
 
-storage = MemoryStorage()
+load_dotenv()
+
 TOKEN = os.getenv("TOKEN")
+
+if TOKEN is None:
+    raise ValueError("Токен не найден! Проверьте файл .env")
+
+storage = MemoryStorage()
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=storage)
 
