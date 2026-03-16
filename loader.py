@@ -10,10 +10,14 @@ load_dotenv()
 
 
 
-storage = MemoryStorage()
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-dp = Dispatcher(bot, storage=storage)
 bot = Bot(token=BOT_TOKEN)
+
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
+
+
 
 
 crypto_service = CryptoServices()
