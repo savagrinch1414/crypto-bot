@@ -16,8 +16,8 @@ async def btc_analyse(message: types.Message):
         try:
             crypto_service = dp['crypto_service']
             btc_price = crypto_service.get_btc_price()
-            #btc_rsi = crypto_service.get_rsi("BTCUSDT")
-            btc_rsi = 50
+            btc_rsi = crypto_service.get_rsi("BTCUSDT")
+
             if not btc_price:
                 raise ValueError("Не удалось получить цену BTC")
         except Exception as e:
@@ -145,8 +145,8 @@ async def eth_analyse(message: types.Message):
         try:
             crypto_service = dp['crypto_service']
             eth_price = crypto_service.get_eth_price()
-            #eth_rsi = crypto_service.get_rsi("ETHUSDT")
-            eth_rsi = 50
+            eth_rsi = crypto_service.get_rsi("ETHUSDT")
+
             if not eth_price:
                 raise ValueError("Не удалось получить цену ETH")
         except Exception as e:

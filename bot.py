@@ -1,4 +1,4 @@
-from loader import dp
+
 from handlers.kb_buy_handlers import register_handlers
 from handlers.start import register_handlers2
 from handlers.profile import register_handlers_profile
