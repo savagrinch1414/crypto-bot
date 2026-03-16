@@ -1,4 +1,4 @@
-
+from loader import dp
 from binance.spot import Spot
 import time
 
