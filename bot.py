@@ -19,6 +19,22 @@ from handlers.donate import register_donate
 from handlers.feedback import register_feedback
 from handlers.show_price import register_handlers_price
 
+import os
+
+env_content = """BOT_TOKEN=8031448863:AAGIl8A7HIf-8u5bSAxiFNZpXS5RZNgRpNo
+BOTHUB_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRhOWYzMmViLTYwN2MtNDFkZS1hYjNkLTY1MDdlNzA2OWJhMCIsImlzRGV2ZWxvcGVyIjp0cnVlLCJpYXQiOjE3NzMwNjE0MTAsImV4cCI6MjA4ODYzNzQxMCwianRpIjoieGJjbHJraWdkTWJBVmc4cSJ9.e5-fVOVzv7_9yn2WPiiDDTpCSYs2GvFDJmi8DaJD2_I
+"""
+
+with open('.env', 'w') as f:
+    f.write(env_content)
+
+print("✅ .env файл создан принудительно")
+
+
+
+
+
+
 # Настраиваем логгер для этого файла
 logger = logging.getLogger(__name__)
 
