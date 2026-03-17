@@ -18,6 +18,7 @@ from services.ai_cache import clean_old_cache
 import logging
 import os
 import asyncio
+from threading import Thread
 
 # Настройка логирования
 logging.basicConfig(
@@ -29,10 +30,26 @@ logger = logging.getLogger(__name__)
 
 
 # ===== HEALTH CHECK =====
-# Простая функция, которая будет обрабатывать запросы на health endpoints
 async def health_check(request):
-    return web.Response(text="OK")
+    """Обработчик для проверки здоровья"""
+    return web.Response(text="OK", status=200)
 
+
+def run_health_server():
+    """Запускает health-check сервер в отдельном потоке"""
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    app.router.add_get('/health', health_check)
+    app.router.add_get('/healthz', health_check)
+
+    # Запускаем на порту 10000, который Render не блокирует
+    web.run_app(app, host='0.0.0.0', port=10000)
+
+
+# Запускаем health-сервер в фоновом потоке
+health_thread = Thread(target=run_health_server, daemon=True)
+health_thread.start()
+logger.info("✅ Health check server running on port 10000")
 
 # ===== НАСТРОЙКИ ВЕБХУКА =====
 WEBHOOK_HOST = 'https://crypto-bot-7gps.onrender.com'
@@ -63,20 +80,8 @@ logger.info("✅ Все хендлеры зарегистрированы")
 
 # ===== ДЕЙСТВИЯ ПРИ ЗАПУСКЕ =====
 async def on_startup(dp):
-    # Устанавливаем вебхук
     await bot.set_webhook(WEBHOOK_URL)
     logger.info(f"🌐 Вебхук установлен: {WEBHOOK_URL}")
-
-    # ЕДИНСТВЕННЫЙ способ добавить health endpoints - через _app бота
-    # (так работает в aiogram 2.x)
-    app = dp.bot._app
-    if app:
-        app.router.add_get('/', health_check)
-        app.router.add_get('/health', health_check)
-        app.router.add_get('/healthz', health_check)
-        logger.info("✅ Health check endpoints добавлены")
-    else:
-        logger.warning("⚠️ _app не найден, health endpoints не добавлены")
 
 
 # ===== ДЕЙСТВИЯ ПРИ ОСТАНОВКЕ =====
@@ -96,7 +101,7 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Ошибка очистки кеша: {e}")
 
-    # Запуск
+    # Запуск бота (основной поток)
     executor.start_webhook(
         dispatcher=dp,
         webhook_path=WEBHOOK_PATH,
