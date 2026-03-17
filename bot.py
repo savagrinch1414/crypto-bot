@@ -25,6 +25,7 @@ from loader import bot
 import os
 import logging
 
+
 async def health_check(request):
     return web.Response(text="OK")
 
@@ -105,14 +106,7 @@ async def on_startup(dp):
     await bot.set_webhook(WEBHOOK_URL)
     logging.info(f"Вебхук установлен: {WEBHOOK_URL}")
 
-    app = dp.bot._session._connector._conns
 
-    health_app = web.Application()
-    health_app.router.add_get('/', health_check)
-    health_app.router.add_get('/health', health_check)
-    health_app.router.add_get('/healthz', health_check)
-
-    logger.info("✅ Health check endpoints добавлены")
 
 async def on_shutdown(dp):
     """Действия при остановке"""
