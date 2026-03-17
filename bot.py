@@ -1,5 +1,4 @@
 from loader import dp, bot
-from aiohttp import web
 from handlers.kb_buy_handlers import register_handlers
 from handlers.start import register_handlers2
 from handlers.profile import register_handlers_profile
@@ -17,37 +16,40 @@ from handlers.show_price import register_handlers_price
 from services.ai_cache import clean_old_cache
 import logging
 import os
+from aiohttp import web
+from threading import Thread
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# ===== НАСТРОЙКИ =====
+# ===== HEALTH CHECK - ОТДЕЛЬНЫЙ СЕРВЕР =====
+async def health_check(request):
+    return web.Response(text="OK")
+
+def run_health_server():
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    app.router.add_get('/health', health_check)
+    app.router.add_get('/healthz', health_check)
+    # Запускаем на порту 10000
+    web.run_app(app, host='0.0.0.0', port=10000)
+
+# Запускаем health-сервер в фоновом потоке
+Thread(target=run_health_server, daemon=True).start()
+logger.info("✅ Health check server running on port 10000")
+
+# ===== НАСТРОЙКИ ВЕБХУКА =====
 WEBHOOK_HOST = 'https://crypto-bot-7gps.onrender.com'
 WEBHOOK_PATH = '/webhook'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 WEBAPP_HOST = '0.0.0.0'
 WEBAPP_PORT = int(os.getenv('PORT', 8000))
 
-# ===== HEALTH CHECK =====
-async def health_check(request):
-    """Просто отвечаем OK для проверок здоровья"""
-    return web.Response(text="OK", status=200)
-
-# Создаём одно общее приложение
-app = web.Application()
-# Добавляем health check endpoints
-app.router.add_get('/', health_check)
-app.router.add_get('/health', health_check)
-app.router.add_get('/healthz', health_check)
-logger.info("✅ Health check endpoints добавлены")
-
-# ===== MIDDLEWARE =====
+# ===== MIDDLEWARE И ХЕНДЛЕРЫ =====
 dp.middleware.setup(AiLimitMidd())
 dp.middleware.setup(LoggingMiddleware())
-logger.info("✅ Middleware установлены")
 
-# ===== РЕГИСТРАЦИЯ ХЕНДЛЕРОВ =====
 register_handlers(dp)
 register_handlers2(dp)
 register_handlers_profile(dp)
@@ -59,7 +61,8 @@ register_handlers_portfelio(dp)
 register_donate(dp)
 register_feedback(dp)
 register_handlers_price(dp)
-logger.info("✅ Все хендлеры зарегистрированы")
+
+logger.info("✅ Бот зарегистрирован")
 
 # ===== ДЕЙСТВИЯ ПРИ ЗАПУСКЕ =====
 async def on_startup(dp):
@@ -75,14 +78,7 @@ async def on_shutdown(dp):
 
 # ===== ЗАПУСК =====
 if __name__ == "__main__":
-    # Очистка кеша
-    try:
-        deleted = clean_old_cache(days=3)
-        logger.info(f"🧹 Очищено {deleted} записей кеша")
-    except Exception as e:
-        logger.error(f"Ошибка очистки кеша: {e}")
-
-    # Запуск бота с нашим приложением
+    clean_old_cache(days=3)
     executor.start_webhook(
         dispatcher=dp,
         webhook_path=WEBHOOK_PATH,
@@ -91,5 +87,5 @@ if __name__ == "__main__":
         host=WEBAPP_HOST,
         port=WEBAPP_PORT,
         skip_updates=True,
-        app=app  # Передаём наше приложение со всеми роутами
+        # Параметр 'app' ПОЛНОСТЬЮ УДАЛЁН
     )
