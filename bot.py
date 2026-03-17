@@ -1,4 +1,5 @@
 from loader import dp
+from aiohttp import web
 from handlers.kb_buy_handlers import register_handlers
 from handlers.start import register_handlers2
 from handlers.profile import register_handlers_profile
@@ -24,7 +25,8 @@ import os
 import logging
 
 
-
+async def health_check(request):
+    return web.Response(text="OK")
 
 
 
@@ -86,6 +88,8 @@ WEBAPP_HOST = '0.0.0.0'  # Для Render обязательно 0.0.0.0
 WEBAPP_PORT = int(os.getenv('PORT', 8000))
 
 async def on_startup(dp):
+    app = web.Application()
+    app.router.add_get('/health', health_check)
     """Действия при запуске"""
     bot = dp.bot
     # Устанавливаем вебхук
