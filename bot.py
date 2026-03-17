@@ -24,15 +24,24 @@ from aiogram.types import ParseMode
 from loader import bot
 import os
 import logging
-
+import threading
 
 async def health_check(request):
-    return web.Response(text="OK")
+    return web.Response(text="OK", status=200)
 
-main_app = web.Application()
-main_app.router.add_get('/', health_check)
-main_app.router.add_get('/health', health_check)
-main_app.router.add_get('/healthz', health_check)
+
+async def run_health_server():
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    app.router.add_get('/health', health_check)
+    app.router.add_get('/healthz', health_check)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    # Используем порт 10000, он точно не занят основным приложением
+    site = web.TCPSite(runner, '0.0.0.0', 10000)
+    await site.start()
+    print("✅ Health check server running on port 10000")
 
 async def health_check(request): return web.Response(text='OK', status=200)
 
@@ -106,9 +115,16 @@ async def on_startup(dp):
     await bot.set_webhook(WEBHOOK_URL)
     logging.info(f"Вебхук установлен: {WEBHOOK_URL}")
 
+    asyncio.create_task(run_health_server())
+    logger.info("✅ Health check server запущен на порту 10000")
+
+    dp.bot._app.router.add_get('/', health_check)
+    dp.bot._app.router.add_get('/health', health_check)
+    dp.bot._app.router.add_get('/healthz', health_check)
+    logger.info("✅ Health check endpoints добавлены в основное приложение")
 
 
-async def on_shutdown(dp):
+async def on_shutdown1(dp):
     """Действия при остановке"""
     bot = dp.bot
     # Удаляем вебхук и закрываем сессию
@@ -137,7 +153,6 @@ if __name__ == "__main__":
             host=WEBAPP_HOST,
             port=WEBAPP_PORT,
             skip_updates=True,
-            app=main_app,
         )
     except Exception as e:
         logger.critical(f"💥 Критическая ошибка при запуске бота: {e}", exc_info=True)
