@@ -1,5 +1,6 @@
 from loader import dp
 from aiohttp import web
+from aiohttp import web
 from handlers.kb_buy_handlers import register_handlers
 from handlers.start import register_handlers2
 from handlers.profile import register_handlers_profile
@@ -24,9 +25,17 @@ from loader import bot
 import os
 import logging
 
-
 async def health_check(request):
     return web.Response(text="OK")
+
+main_app = web.Application()
+main_app.router.add_get('/', health_check)
+main_app.router.add_get('/health', health_check)
+main_app.router.add_get('/healthz', health_check)
+
+async def health_check(request): return web.Response(text='OK', status=200)
+
+
 
 
 
@@ -88,13 +97,22 @@ WEBAPP_HOST = '0.0.0.0'  # Для Render обязательно 0.0.0.0
 WEBAPP_PORT = int(os.getenv('PORT', 8000))
 
 async def on_startup(dp):
-    app = web.Application()
-    app.router.add_get('/health', health_check)
+
+
     """Действия при запуске"""
     bot = dp.bot
     # Устанавливаем вебхук
     await bot.set_webhook(WEBHOOK_URL)
     logging.info(f"Вебхук установлен: {WEBHOOK_URL}")
+
+    app = dp.bot._session._connector._conns
+
+    health_app = web.Application()
+    health_app.router.add_get('/', health_check)
+    health_app.router.add_get('/health', health_check)
+    health_app.router.add_get('/healthz', health_check)
+
+    logger.info("✅ Health check endpoints добавлены")
 
 async def on_shutdown(dp):
     """Действия при остановке"""
@@ -124,7 +142,8 @@ if __name__ == "__main__":
             on_shutdown=on_shutdown,
             host=WEBAPP_HOST,
             port=WEBAPP_PORT,
-            skip_updates=True,  # Пропустить старые апдейты
+            skip_updates=True,
+            app=main_app,
         )
     except Exception as e:
         logger.critical(f"💥 Критическая ошибка при запуске бота: {e}", exc_info=True)
